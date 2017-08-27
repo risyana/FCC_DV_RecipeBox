@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 
-ReactDOM.render(<App title="reactjs calculator" />, document.getElementById('root'));
+ReactDOM.render(<App title="reactjs recipe book" />, document.getElementById('root'));
 registerServiceWorker();
 
 if (module.hot){

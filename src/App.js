@@ -1,210 +1,180 @@
 import React, { Component } from 'react';
-import './App.css';
+import Accordion from './components/Accordion';
+import InputForm from './components/InputForm';
 
-const style = {
-  button_small :{
-    width : '80px',
-    height : '50px',
-    border : '#ececec 1px solid',
-    fontSize : '20px',
-  },
-  button_big :{
-    width : '160px',
-    height : '50px',
-    border : '#ededed 1px solid',
-    fontSize : '20px',
-  },
-  displaybox :{
-    width : '320px',
-    height : '50px',
-    fontSize : '25px',
-    paddingLeft : '10px',
-    paddingRight : '10px',
-    textAlign : 'right',
-    border : '#ededed 1px solid',
-  },
-  title :{
-    width : '320px',
-    textAlign : 'center',
-  },
-};
+const defaultMode = {name:"view", text:"Save", cn:"btn btn-primary btn-sm"};
 
-class App extends Component {
+let food =[{food:"sate",
+            recipe:"ayam,nasi,saos"},  
+          {food: "soto",
+            recipe: "lobak, daging, nasi, sayur"},
+          {food: "burger",
+            recipe:"daging, rujak, tahu, sosis"}
+          ];
 
+
+let stateFood = (typeof localStorage["_risyana_recipe"] == 'undefined')
+            ? food
+            : JSON.parse(localStorage["_risyana_recipe"]) ;
+
+class App extends Component{
   constructor(props){
     super(props);
+
     this.state = {
-      calcChain : "",
-      lastChain : "",
-    }
-    this.calculateChain = this.calculateChain.bind(this);
-    this.clearAll = this.clearAll.bind(this);
-    this.backspace = this.backspace.bind(this);
-    this.numberPressed = this.numberPressed.bind(this);
-    this.operatorPressed = this.operatorPressed.bind(this);
-    this.decimalPressed = this.decimalPressed.bind(this);
+      foodList : stateFood,
+      food : "",
+      recipe : "",
+      mode : defaultMode, //view, edit, delete
+      foodListIndex : -1,
+    };
+
+    this.onChangeName = this.onChangeName.bind(this);
+    this.onChangeRecipe = this.onChangeRecipe.bind(this);
+    this.onClickSave = this.onClickSave.bind(this);
+    this.onClickEdit = this.onClickEdit.bind(this);
+    this.onClickDelete = this.onClickDelete.bind(this);
+    this.onClickCancel = this.onClickCancel.bind(this);
   }
-
-
-  operatorPressed(event){
-    let lastChain_i, calcChain_i;
-
-    lastChain_i = event.target.innerHTML;
-
-    calcChain_i = !isNaN(this.state.lastChain) 
-    ? `${this.state.calcChain}${event.target.innerHTML}` 
-    : this.state.calcChain.replace(/.$/,lastChain_i);
-
+  
+  onChangeName(event){
     this.setState({
-      calcChain : calcChain_i,
-      lastChain : lastChain_i,
+      food : event.target.value
     });
   }
 
-
-  decimalPressed(){
-    let lastChain_i, calcChain_i;
-    lastChain_i = this.state.lastChain;
-    calcChain_i = this.state.calcChain;
-
-    calcChain_i = lastChain_i.includes(".") || ( !isNaN(calcChain_i) && (calcChain_i.match(/\./g)||"").length == 1)
-    ? calcChain_i 
-    : `${calcChain_i}.`;
-
-    lastChain_i = lastChain_i.includes(".")
-    ? lastChain_i 
-    : `${lastChain_i}.`;
-
+  onChangeRecipe(event){
     this.setState({
-      calcChain : calcChain_i,
-      lastChain : lastChain_i
-    });
-
-  }
-
-  numberPressed(event){
-    let lastChain_i, calcChain_i;
-
-    lastChain_i = this.state.lastChain;
-    calcChain_i = this.state.calcChain;
-    
-    if (!(event.target.innerHTML == "0" && isNaN(calcChain_i) && this.state.lastChain == "0")){       
-      // check case : after press CE
-      calcChain_i = this.state.calcChain == "0" 
-                    ? event.target.innerHTML 
-                    : `${this.state.calcChain}${event.target.innerHTML}`;
-
-      lastChain_i = isNaN(lastChain_i) || lastChain_i == "0" 
-                    ? "" 
-                    : lastChain_i;
-      lastChain_i =  `${lastChain_i}${event.target.innerHTML}`;
-    }
-
-    this.setState({
-      calcChain : calcChain_i,
-      lastChain : lastChain_i
+      recipe : event.target.value
     });
   }
 
-  clearAll(){
+  onClickCancel(event){
     this.setState({
-      calcChain : "0",
-      lastChain : "0",
+      mode: defaultMode,
+      food:"",
+      recipe:"",
+    });
+    this.enableInputBox();
+    this.refs.App.refs.InputFormFood.refs.InputBox.focus();
+  }
+  
+  onClickEdit(event){
+    this.enableInputBox();
+    this.refs.App.refs.InputFormFood.refs.InputBox.focus();
+    this.setState({
+      mode: {name:"edit", text:"Update", cn:"btn btn-success btn-sm"},
+      food: this.state.foodList[event].food,
+      recipe: this.state.foodList[event].recipe,
+      foodListIndex : event,
     });
   }
 
-  backspace(){
-    let lastChain_i, calcChain_i;
-    calcChain_i = this.state.calcChain;
-    lastChain_i = this.state.lastChain;
-
-    calcChain_i = calcChain_i.substr(0, calcChain_i.length - 1);
-    lastChain_i = lastChain_i.substr(0, lastChain_i.length - 1);
-
-    if (calcChain_i == "") {
-        calcChain_i = "0"; 
-        lastChain_i = "0"; 
-    }
-
+  onClickDelete(event){
     this.setState({
-      calcChain : calcChain_i,
-      lastChain : lastChain_i
-    }); 
+      mode: {name:"delete", text:"Delete Now", cn:"btn btn-danger btn-sm"},
+      food: this.state.foodList[event].food,
+      recipe: this.state.foodList[event].recipe,
+      foodListIndex : event,
+    });
+    this.disableInputBox();
   }
 
-  calculateChain(){
-    if (!isNaN(this.state.lastChain)){
-      this.setState({
-        calcChain : eval(this.state.calcChain).toString(),
-        lastChain : eval(this.state.calcChain).toString()
-      });
+  enableInputBox(){
+    this.refs.App.refs.InputFormFood.refs.InputBox.disabled=false;
+    this.refs.App.refs.InputFormRecipe.refs.InputBox.disabled=false;
+  }
+
+  disableInputBox(){
+    this.refs.App.refs.InputFormFood.refs.InputBox.disabled=true;
+    this.refs.App.refs.InputFormRecipe.refs.InputBox.disabled=true;
+  }
+
+  onClickSave(event){
+
+    if(!this.state.food||!this.state.recipe){
+      alert('Please input name & ingredients') ;
+      return null;
+    } 
+
+    let newFoodList = this.state.foodList;
+
+    if(this.state.mode.name==="view"){
+      newFoodList.push({food: this.state.food, recipe: this.state.recipe});
+    }else if(this.state.mode.name==="edit"){
+      newFoodList[this.state.foodListIndex] = {food : this.state.food, recipe : this.state.recipe }
+    }else if(this.state.mode.name==="delete"){
+      newFoodList.splice(this.state.foodListIndex,1);
     }
-  }
+         
+    this.setState({
+      food : "",
+      recipe : "",
+      foodList : newFoodList,
+      mode : defaultMode,
+    });
 
+    localStorage.setItem("_risyana_recipe",JSON.stringify(newFoodList));
+
+    this.enableInputBox();
+    this.refs.App.refs.InputFormFood.refs.InputBox.focus();
+
+    event.preventDefault();
+  }
+  
   render(){
-    return (
-      <div className="container text-center">
-        <div className="row">
-          <h2>{this.props.title}</h2>
+    return(
+      <div className='container'>
+        <div className='row'>
+          <div className='col col-md-2'>
+          </div>
+          <div className='col col-md-8 text-center'>
+            <h3>My Recipe Book</h3>
+            <hr/>
+          </div>
+          <div className='col col-md-2'>
+          </div>
         </div>
-        <div className="row">
-          <DisplayBox style={style.displaybox} calcChain={this.state.calcChain}/>
+        
+        <div className='row'>
+          <div className='col col-md-2'>
+
+          </div>
+          <div className='col col-md-4'>
+            <InputForm 
+              onClickSave = {this.onClickSave}  
+              onClickCancel = {this.onClickCancel}  
+              onChangeName = {this.onChangeName} 
+              onChangeRecipe ={this.onChangeRecipe}
+              valueFood = {this.state.food}
+              valueRecipe = {this.state.recipe}
+              mode = {this.state.mode}
+              ref='App'/>
+          </div>
+          <div className='col col-md-4'>
+            <div className='well'>
+              <h5 className='text-center'>List of Recipe</h5>
+              {
+                this.state.foodList.length !== 0
+                ?
+                <Accordion 
+                  data = {this.state.foodList}
+                  onClickEdit = {this.onClickEdit}
+                  onClickDelete = {this.onClickDelete} />
+                : <div><hr/> you don't have any recipe yet</div>
+              }
+            </div>
+          </div>
+          <div className='col col-md-2'>
+          
+          </div>
         </div>
-        <div className="row">
-          <Buttonku onClick={this.clearAll} style={style.button_small}>CE</Buttonku>
-          <Buttonku onClick={this.backspace} style={style.button_small}>{`<<`}</Buttonku>
-          <Buttonku onClick={this.operatorPressed} style={style.button_small}>+</Buttonku>
-          <Buttonku onClick={this.operatorPressed} style={style.button_small}>-</Buttonku>
-        </div>
-        <div className="row">
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>7</Buttonku>
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>8</Buttonku>
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>9</Buttonku>
-          <Buttonku onClick={this.operatorPressed} style={style.button_small}>/</Buttonku>
-        </div>
-        <div className="row">
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>4</Buttonku>
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>5</Buttonku>
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>6</Buttonku>
-          <Buttonku onClick={this.operatorPressed} style={style.button_small}>*</Buttonku>
-        </div>
-        <div className="row">
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>1</Buttonku>
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>2</Buttonku>
-          <Buttonku onClick={this.numberPressed} style={style.button_small}>3</Buttonku>
-          <Buttonku onClick={this.decimalPressed} style={style.button_small}>.</Buttonku>
-        </div>        
-        <div className="row">
-          <Buttonku onClick={this.numberPressed} style={style.button_big}>0</Buttonku>
-          <Buttonku onClick={this.calculateChain} style={style.button_big}>=</Buttonku>
-        </div>
+
 
       </div>
-      );
-  }
-}   
-
-class Buttonku extends Component {
- render (){
-  const {children, style, onClick} = this.props;
-  return(
-    <button 
-    onClick={onClick}
-    style = {style}>
-    {children}
-    </button>
-
     );
-}
+  }
 }
 
-const DisplayBox = ({style, calcChain}) =>
-<input 
-disabled='disabled'
-type='text'
-style={style}
-value={calcChain}
->
-</input>
 
 export default App;
